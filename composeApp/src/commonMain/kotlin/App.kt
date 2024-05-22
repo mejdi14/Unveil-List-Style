@@ -38,7 +38,8 @@ fun App() {
                     item {
                         Image(painter = painterResource(Res.drawable.the_killing_poster),
                             null, modifier = Modifier.size(200.dp).graphicsLayer {
-                                rotationZ = 20f
+                                rotationY = 20f
+                                translationX = 10f * i
                             })
                     }
                 }
