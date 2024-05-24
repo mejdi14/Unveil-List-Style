@@ -52,6 +52,8 @@ kotlin {
             implementation(libs.androidx.activity.compose)
         }
         commonMain.dependencies {
+            implementation("co.touchlab:kermit:2.0.3")
+            implementation ("com.google.accompanist:accompanist-systemuicontroller:0.35.1-alpha")
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material)
