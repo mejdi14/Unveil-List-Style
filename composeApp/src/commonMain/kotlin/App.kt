@@ -1,7 +1,9 @@
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,7 +20,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
@@ -48,29 +53,43 @@ fun App() {
                 horizontalAlignment = Alignment.End
             ) {
 
-
                         for (i in 1..30) {
-
-                    val initialRotationValue = if (i > listState.firstVisibleItemIndex) {
-                        1f * (i - listState.firstVisibleItemIndex) - (listState.firstVisibleItemScrollOffset / 80)
-                    } else {
-                        0f
-                    }
-
-                            val halfScreenSize = (1000 / 2)
 
                             val rotation =
                                  ( 5f * (i - listState.firstVisibleItemIndex) - (listState.firstVisibleItemScrollOffset / 70f))
                                 if(i == 4)
                                 Logger.i("rotation: ${(listState.firstVisibleItemScrollOffset / 22f)}")
                     item {
-                        Image(painter = painterResource(Res.drawable.the_killing_poster),
-                            null, modifier = Modifier.width(200.dp).height(200.dp).graphicsLayer {
-                                rotationY = 30f
-                                alpha = 0.9f
-                                cameraDistance = 39f
-                                translationX = -(rotation * 20) + 120f
-                            }, contentScale = ContentScale.FillHeight)
+                        Box {
+                            Image(painter = painterResource(Res.drawable.the_killing_poster),
+                                null,
+                                modifier = Modifier.width(200.dp).height(200.dp).graphicsLayer {
+                                    rotationY = 30f
+                                    alpha = 0.9f
+                                    cameraDistance = 39f
+                                    translationX = -(rotation * 20) + 120f
+                                },
+                                contentScale = ContentScale.FillHeight
+                            )
+                            Canvas(modifier = Modifier.matchParentSize()) {
+                                val canvasWidth = size.width
+                                val canvasHeight = size.height
+
+                                // Create a transparent gradient effect from the edges to the center
+                                val gradient = Brush.horizontalGradient(
+                                    colors = listOf(Color.Transparent, Color.Black, Color.Transparent),
+                                    startX = 0f,
+                                    endX = canvasWidth,
+                                    tileMode = TileMode.Clamp
+                                )
+
+                                drawRect(
+                                    brush = gradient,
+                                    size = size,
+                                    blendMode = BlendMode.DstIn
+                                )
+                            }
+                        }
                     }
                 }
             }
