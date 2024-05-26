@@ -1,5 +1,7 @@
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -63,14 +65,27 @@ fun App() {
         val coroutineScope = rememberCoroutineScope()
         var isDragging by remember { mutableStateOf(false) }
         val paddingValue by animateDpAsState(
-            targetValue = if (isDragging) 20.dp else 0.dp,
+            targetValue = if (isDragging) 190.dp else 190.dp,
             animationSpec = tween(durationMillis = 500)
         )
+        val stratchValue by animateIntAsState(
+            targetValue = if (isDragging) 35 else 35,
+            animationSpec = tween(durationMillis = 500)
+        )
+
+        val transitionValue by animateFloatAsState(
+            targetValue = if (isDragging) 1f else 1.2f,
+            animationSpec = tween(durationMillis = 500)
+        )
+
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.End) {
             LazyColumn(
                 state = listState,
                 userScrollEnabled = false,
-                modifier = Modifier.fillMaxSize().pointerInput(Unit) {
+                modifier = Modifier.graphicsLayer {
+                    scaleX = transitionValue
+                    scaleY = transitionValue
+                }.fillMaxSize().pointerInput(Unit) {
                     // Never reached
                     detectTapGestures(
                         onPress = {
@@ -104,49 +119,24 @@ fun App() {
                 horizontalAlignment = Alignment.End
             ) {
 
-                for (i in 1..30) {
 
+                for (i in 1..30) {
                     val rotation =
-                        (5f * (i - listState.firstVisibleItemIndex) - (listState.firstVisibleItemScrollOffset / 44f))
+                        (5f * (i - listState.firstVisibleItemIndex) - (listState.firstVisibleItemScrollOffset / (44f)))
                     item {
                         Box {
                             Image(
                                 painter = painterResource(Res.drawable.the_killing_poster),
                                 null,
-                                modifier = Modifier.padding(paddingValue).width(200.dp).height(200.dp).graphicsLayer {
+                                modifier = Modifier.height(paddingValue).width(paddingValue).graphicsLayer {
                                     rotationZ = 4f
                                     alpha = 0.9f
-                                    cameraDistance = 29f
-                                    translationX = -(rotation * 30) + 120f
+                                    cameraDistance = 2f
+                                    translationX = -(rotation * (30)) + (100f)
                                 },
                                 contentScale = ContentScale.FillBounds
                             )
-                            Canvas(modifier = Modifier.width(200.dp).height(200.dp).graphicsLayer {
-                                rotationY = 30f
-                                alpha = 0.9f
-                                cameraDistance = 39f
-                                translationX = -(rotation * 20) + 120f
-                            }) {
-                                val canvasWidth = size.width
-                                val canvasHeight = size.height
 
-                                val gradient = Brush.horizontalGradient(
-                                    colors = listOf(
-                                        Color.Transparent,
-                                        Color.Black,
-                                        Color.Transparent
-                                    ),
-                                    startX = 0f,
-                                    endX = canvasWidth,
-                                    tileMode = TileMode.Clamp
-                                )
-
-                                drawRect(
-                                    brush = gradient,
-                                    size = size,
-                                    blendMode = BlendMode.DstIn
-                                )
-                            }
                         }
                     }
                 }
