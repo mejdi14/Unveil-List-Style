@@ -1,13 +1,24 @@
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import kotlinx.coroutines.CoroutineScope
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.forEachGesture
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -25,11 +36,15 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import co.touchlab.kermit.Logger
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -45,39 +60,82 @@ fun App() {
     MaterialTheme {
         var showContent by remember { mutableStateOf(false) }
         val listState = rememberLazyListState()
-        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.End,) {
+        val coroutineScope = rememberCoroutineScope()
+        var isDragging by remember { mutableStateOf(false) }
+        val paddingValue by animateDpAsState(
+            targetValue = if (isDragging) 20.dp else 0.dp,
+            animationSpec = tween(durationMillis = 500)
+        )
+        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.End) {
             LazyColumn(
-                state =  listState,
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy((-84).dp),
+                state = listState,
+                userScrollEnabled = false,
+                modifier = Modifier.fillMaxSize().pointerInput(Unit) {
+                    // Never reached
+                    detectTapGestures(
+                        onPress = {
+                            isDragging = true
+                            tryAwaitRelease()
+                            isDragging = false
+                        }
+
+                    )
+
+                }.pointerInput(Unit) {
+                    detectDragGestures  (onDragStart = {
+                        isDragging = true
+                    },
+                        onDrag = { change, dragAmount ->
+                            isDragging = true
+                            coroutineScope.launch {
+                                // Control the scroll by the drag offset
+                                listState.scrollBy(-dragAmount.y)
+                            }
+
+                        },
+                        onDragEnd = {
+                            isDragging = false
+                        },
+                        onDragCancel = {
+                            isDragging = false
+                        })
+                },
+                verticalArrangement = Arrangement.spacedBy((-124).dp),
                 horizontalAlignment = Alignment.End
             ) {
 
-                        for (i in 1..30) {
+                for (i in 1..30) {
 
-                            val rotation =
-                                 ( 5f * (i - listState.firstVisibleItemIndex) - (listState.firstVisibleItemScrollOffset / 70f))
-                                if(i == 4)
-                                Logger.i("rotation: ${(listState.firstVisibleItemScrollOffset / 22f)}")
+                    val rotation =
+                        (5f * (i - listState.firstVisibleItemIndex) - (listState.firstVisibleItemScrollOffset / 44f))
                     item {
                         Box {
-                            Image(painter = painterResource(Res.drawable.the_killing_poster),
+                            Image(
+                                painter = painterResource(Res.drawable.the_killing_poster),
                                 null,
-                                modifier = Modifier.width(200.dp).height(200.dp).graphicsLayer {
-                                    rotationY = 30f
+                                modifier = Modifier.padding(paddingValue).width(200.dp).height(200.dp).graphicsLayer {
+                                    rotationZ = 4f
                                     alpha = 0.9f
-                                    cameraDistance = 39f
-                                    translationX = -(rotation * 20) + 120f
+                                    cameraDistance = 29f
+                                    translationX = -(rotation * 30) + 120f
                                 },
-                                contentScale = ContentScale.FillHeight
+                                contentScale = ContentScale.FillBounds
                             )
-                            Canvas(modifier = Modifier.matchParentSize()) {
+                            Canvas(modifier = Modifier.width(200.dp).height(200.dp).graphicsLayer {
+                                rotationY = 30f
+                                alpha = 0.9f
+                                cameraDistance = 39f
+                                translationX = -(rotation * 20) + 120f
+                            }) {
                                 val canvasWidth = size.width
                                 val canvasHeight = size.height
 
-                                // Create a transparent gradient effect from the edges to the center
                                 val gradient = Brush.horizontalGradient(
-                                    colors = listOf(Color.Transparent, Color.Black, Color.Transparent),
+                                    colors = listOf(
+                                        Color.Transparent,
+                                        Color.Black,
+                                        Color.Transparent
+                                    ),
                                     startX = 0f,
                                     endX = canvasWidth,
                                     tileMode = TileMode.Clamp
