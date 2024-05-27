@@ -24,6 +24,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
@@ -37,6 +40,7 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -47,12 +51,20 @@ import co.touchlab.kermit.Logger
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 import unveilliststyle.composeapp.generated.resources.Res
+import unveilliststyle.composeapp.generated.resources.bebe
+import unveilliststyle.composeapp.generated.resources.boat
+import unveilliststyle.composeapp.generated.resources.cheetah
 import unveilliststyle.composeapp.generated.resources.compose_multiplatform
+import unveilliststyle.composeapp.generated.resources.eye
+import unveilliststyle.composeapp.generated.resources.images
+import unveilliststyle.composeapp.generated.resources.planet
+import unveilliststyle.composeapp.generated.resources.runner
 import unveilliststyle.composeapp.generated.resources.the_killing_poster
 
 @OptIn(ExperimentalResourceApi::class)
@@ -64,14 +76,44 @@ fun App() {
         val listState = rememberLazyListState()
         val coroutineScope = rememberCoroutineScope()
         var isDragging by remember { mutableStateOf(false) }
+        val list = listOf(
+            Res.drawable.bebe,
+            Res.drawable.boat,
+            Res.drawable.cheetah,
+            Res.drawable.eye,
+            Res.drawable.images,
+            Res.drawable.planet,
+            Res.drawable.runner, Res.drawable.bebe,
+            Res.drawable.boat,
+            Res.drawable.cheetah,
+            Res.drawable.eye,
+            Res.drawable.images,
+            Res.drawable.planet,
+            Res.drawable.runner, Res.drawable.bebe,
+            Res.drawable.boat,
+            Res.drawable.cheetah,
+            Res.drawable.eye,
+            Res.drawable.images,
+            Res.drawable.planet,
+            Res.drawable.runner, Res.drawable.bebe,
+            Res.drawable.boat,
+            Res.drawable.cheetah,
+            Res.drawable.eye,
+            Res.drawable.images,
+            Res.drawable.planet,
+            Res.drawable.runner, Res.drawable.bebe,
+            Res.drawable.boat,
+            Res.drawable.cheetah,
+            Res.drawable.eye,
+            Res.drawable.images,
+            Res.drawable.planet,
+            Res.drawable.runner,
+        )
         val paddingValue by animateDpAsState(
             targetValue = if (isDragging) 190.dp else 190.dp,
             animationSpec = tween(durationMillis = 500)
         )
-        val stratchValue by animateIntAsState(
-            targetValue = if (isDragging) 35 else 35,
-            animationSpec = tween(durationMillis = 500)
-        )
+
 
         val transitionValue by animateFloatAsState(
             targetValue = if (isDragging) 1f else 1.2f,
@@ -93,11 +135,9 @@ fun App() {
                             tryAwaitRelease()
                             isDragging = false
                         }
-
                     )
-
                 }.pointerInput(Unit) {
-                    detectDragGestures  (onDragStart = {
+                    detectDragGestures(onDragStart = {
                         isDragging = true
                     },
                         onDrag = { change, dragAmount ->
@@ -118,30 +158,42 @@ fun App() {
                 verticalArrangement = Arrangement.spacedBy((-124).dp),
                 horizontalAlignment = Alignment.End
             ) {
-
-
-                for (i in 1..30) {
-                    val rotation =
-                        (5f * (i - listState.firstVisibleItemIndex) - (listState.firstVisibleItemScrollOffset / (44f)))
-                    item {
-                        Box {
-                            Image(
-                                painter = painterResource(Res.drawable.the_killing_poster),
-                                null,
-                                modifier = Modifier.height(paddingValue).width(paddingValue).graphicsLayer {
-                                    rotationZ = 4f
-                                    alpha = 0.9f
-                                    cameraDistance = 2f
-                                    translationX = -(rotation * (30)) + (100f)
-                                },
-                                contentScale = ContentScale.FillBounds
-                            )
-
-                        }
-                    }
+                itemsIndexed(list) { i, item ->
+                    CardItem(i, listState, list, paddingValue)
                 }
             }
         }
+    }
+}
+
+@OptIn(ExperimentalResourceApi::class)
+@Composable
+private fun CardItem(
+    i: Int,
+    listState: LazyListState,
+    list: List<DrawableResource>,
+    paddingValue: Dp
+) {
+    val stratchValue by animateIntAsState(
+        targetValue = if (i == listState.firstVisibleItemIndex + 5) 200 else 0,
+        animationSpec = tween(durationMillis = 200)
+    )
+    val rotation =
+        (5f * (i - listState.firstVisibleItemIndex) - (listState.firstVisibleItemScrollOffset / (40f)))
+    Box {
+        Image(
+            painter = painterResource(list[i]),
+            null,
+            modifier = Modifier.height(paddingValue).width(170.dp)
+                .graphicsLayer {
+                    transformOrigin = TransformOrigin(0.5f, -1.0f) // Center pivot
+                    cameraDistance = 12f * density // Center pivot
+                rotationY = -30f
+                    alpha = 0.9f
+                    translationX = -(rotation * (30)) + (320f) + (stratchValue)
+                },
+            contentScale = ContentScale.FillWidth
+        )
     }
 }
 

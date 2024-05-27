@@ -54,7 +54,6 @@ kotlin {
         commonMain.dependencies {
             implementation("co.touchlab:kermit:2.0.3")
             implementation ("com.google.accompanist:accompanist-systemuicontroller:0.35.1-alpha")
-            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material)
