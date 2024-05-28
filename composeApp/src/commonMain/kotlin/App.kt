@@ -22,13 +22,17 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.pointerInput
@@ -51,7 +55,6 @@ import unveilliststyle.composeapp.generated.resources.images
 import unveilliststyle.composeapp.generated.resources.planet
 import unveilliststyle.composeapp.generated.resources.runner
 
-@OptIn(ExperimentalResourceApi::class)
 @Composable
 @Preview
 fun App() {
@@ -64,7 +67,6 @@ fun App() {
 @OptIn(ExperimentalResourceApi::class)
 @Composable
 private fun UnveilList() {
-    var showContent by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     var isDragging by remember { mutableStateOf(false) }
@@ -101,11 +103,6 @@ private fun UnveilList() {
         Res.drawable.planet,
         Res.drawable.runner,
     )
-    val paddingValue by animateDpAsState(
-        targetValue = if (isDragging) 190.dp else 190.dp,
-        animationSpec = tween(durationMillis = 500)
-    )
-
 
     val transitionValue by animateFloatAsState(
         targetValue = if (isDragging) 1f else 1.2f,
@@ -135,7 +132,6 @@ private fun UnveilList() {
                     onDrag = { change, dragAmount ->
                         isDragging = true
                         coroutineScope.launch {
-                            // Control the scroll by the drag offset
                             listState.scrollBy(-dragAmount.y)
                         }
 
@@ -151,7 +147,7 @@ private fun UnveilList() {
             horizontalAlignment = Alignment.End
         ) {
             itemsIndexed(list) { i, item ->
-                CardItem(i, listState, list, paddingValue)
+                CardItem(i, listState, list)
             }
         }
     }
@@ -163,7 +159,6 @@ private fun CardItem(
     i: Int,
     listState: LazyListState,
     list: List<DrawableResource>,
-    paddingValue: Dp
 ) {
     val stratchValue by animateIntAsState(
         targetValue = if (i == listState.firstVisibleItemIndex + 5) 200 else 0,
@@ -172,8 +167,32 @@ private fun CardItem(
     val rotation =
         (5f * (i - listState.firstVisibleItemIndex) - (listState.firstVisibleItemScrollOffset / (40f)))
     Box {
-
-        ImagePlayground(modifier = Modifier.height(paddingValue).width(170.dp), list[i], rotation, stratchValue)
+        Image(
+            painterResource(list[i]),
+            contentDescription = null,
+            contentScale = ContentScale.FillWidth,
+            modifier = Modifier.width(170.dp).height(190.dp).graphicsLayer {
+                transformOrigin = TransformOrigin(0.3f, -1.0f) // Center pivot
+                cameraDistance = 12f * density // Center pivot
+                alpha = 0.99f
+                rotationY = -30f
+                translationX = -(rotation * (30)) + (320f) + (stratchValue)
+            }.drawWithContent {
+                val radius = size.minDimension / 5
+                val colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.1f))
+                val brush = Brush.radialGradient(
+                    colors = colors,
+                    center = center,
+                    radius = radius,
+                    tileMode = TileMode.Clamp
+                )
+                drawContent()
+                drawRect(
+                    brush = brush,
+                    blendMode = BlendMode.DstOut
+                )
+            },
+        )
     }
 }
 
@@ -183,39 +202,11 @@ fun dpToPx(dpValue: Dp): Float {
     return with(density) { dpValue.toPx() }
 }
 
-@OptIn(ExperimentalResourceApi::class)
-@Composable
-fun ImagePlayground(
-    modifier: Modifier,
-    drawableResource: DrawableResource,
-    rotation: Float,
-    stratchValue: Int
-) {
-    val vectorPainter = painterResource(drawableResource)
-
-    Canvas(modifier = modifier.graphicsLayer {
-        transformOrigin = TransformOrigin(0.5f, -1.0f) // Center pivot
-        cameraDistance = 12f * density // Center pivot
-        rotationY = -30f
-        translationX = -(rotation * (30)) + (320f) + (stratchValue)
-    },) {
-        with(vectorPainter) {
-            draw(size)
-        }
-
-        val edgeSize = 30.dp.toPx()
-        drawFadingEdges(size, edgeSize)
-    }
-
-}
 
 fun DrawScope.drawFadingEdges(imageSize: Size, edgeSize: Float) {
-    // Top edge fading
-    // Define the transparency gradient that fades from opaque to fully transparent
-    val transparentWhite = Color.Transparent.copy(alpha = 0.5f)
+    val transparentWhite = Color.White.copy(alpha = 0.5f)
     val fullyTransparent = Color.Transparent
 
-    // Top edge fading
     drawRect(
         brush = Brush.verticalGradient(
             colors = listOf(transparentWhite, fullyTransparent),
@@ -225,7 +216,6 @@ fun DrawScope.drawFadingEdges(imageSize: Size, edgeSize: Float) {
         size = Size(imageSize.width, edgeSize)
     )
 
-    // Bottom edge fading
     drawRect(
         brush = Brush.verticalGradient(
             colors = listOf(fullyTransparent, transparentWhite),
@@ -236,7 +226,6 @@ fun DrawScope.drawFadingEdges(imageSize: Size, edgeSize: Float) {
         size = Size(imageSize.width, edgeSize)
     )
 
-    // Left edge fading
     drawRect(
         brush = Brush.horizontalGradient(
             colors = listOf(transparentWhite, fullyTransparent),
@@ -246,7 +235,6 @@ fun DrawScope.drawFadingEdges(imageSize: Size, edgeSize: Float) {
         size = Size(edgeSize, imageSize.height)
     )
 
-    // Right edge fading
     drawRect(
         brush = Brush.horizontalGradient(
             colors = listOf(fullyTransparent, transparentWhite),
@@ -256,16 +244,4 @@ fun DrawScope.drawFadingEdges(imageSize: Size, edgeSize: Float) {
         topLeft = Offset(imageSize.width - edgeSize, 0f),
         size = Size(edgeSize, imageSize.height)
     )
-}
-
-
-fun createShaderPainter(image: ImageBitmap): Painter {
-    return object : Painter() {
-        override val intrinsicSize: Size = Size(image.width.toFloat(), image.height.toFloat())
-
-        override fun DrawScope.onDraw() {
-            // Implement your shader logic here
-            // This example does not include a specific shader logic, as it would depend on the refraction effect you want to achieve
-        }
-    }
 }
